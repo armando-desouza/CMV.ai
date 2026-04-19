@@ -6,6 +6,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/insumos")
+@CrossOrigin(origins = "*")
 public class InsumoController {
     
     @Autowired

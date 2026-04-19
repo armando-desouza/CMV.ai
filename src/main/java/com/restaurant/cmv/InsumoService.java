@@ -16,8 +16,8 @@ public class InsumoService {
     @Autowired
     private InsumoRepository repository;
 
-    @Value("${openai.api.key}")
-    private String openaiApiKey;
+    @Value("${gemini.api.key}")
+    private String geminiApiKey;
 
     public List<Insumo> listarTodos() {
         return repository.findAll();
@@ -49,29 +49,37 @@ public class InsumoService {
             String prompt = "Alerta de custo! O preço do(a) " + insumo.getNome() + " passou de R$ " + anterior + " para R$ " + atual + ". Por favor sugira um novo preço para os pratos e 2 dias de ingredientes substitutos para não repassar o custo ao cliente.";
             System.out.println("🤖 Prompt montado: " + prompt);
             
-            Map<String, String> mensagemUser = new HashMap<>();
-            mensagemUser.put("role", "user");
-            mensagemUser.put("content", prompt);
+            Map<String, String> textMap = new HashMap();
+            textMap.put("text", prompt);
 
-            Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("model", "gpt-3.5-turbo");
-            requestBody.put("temperature", 0.7);
-            requestBody.put("messages", List.of(mensagemUser));
+            List<Map<String, String>> partsList = List.of(textMap);
 
-            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();            headers.set("Authorization", "Bearer " + openaiApiKey);
+            Map<String, Object> contentMap = new HashMap<>();
+            contentMap.put("parts", partsList);
+
+            List<Map<String, Object>> contentsList = List.of(contentMap);
+
+            Map<String, Object> requestBody = new HashMap();
+            requestBody.put("contents", contentsList);
+
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
             headers.set("Content-Type", "application/json");
-
             org.springframework.http.HttpEntity<Map<String, Object>> envelope = new org.springframework.http.HttpEntity<>(requestBody, headers);
+
             try {
                 RestTemplate correio = new RestTemplate();
-                String url = "https://api.openai.com/v1/chat/completions";
+                String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + geminiApiKey;
 
-                System.out.println("📡 Enviando para OpenAI...");
+                System.out.println("📡 Enviando para Gemini...");
                 Map<String, Object> respostaBruta = correio.postForObject(url, envelope, Map.class);
                 
-                List<Map<String, Object>> choices = (List<Map<String, Object>>) respostaBruta.get("choices");
-                Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
-                String textoDaIA = (String) message.get("content");
+                List<Map<String, Object>> candidates = (List<Map<String, Object>>) respostaBruta.get("candidates");
+
+                Map<String, Object> content = (Map<String, Object>) candidates.get(0).get("content");
+
+                List<Map<String, Object>> parts = (List<Map<String, Object>>) content.get("parts");
+
+                String textoDaIA = (String) parts.get(0).get("text");
 
                 System.out.println("🤖 Sugestão da IA recebida!");
                 return textoDaIA;
