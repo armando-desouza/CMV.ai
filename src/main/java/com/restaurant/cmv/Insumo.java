@@ -91,4 +91,11 @@ public class Insumo {
     public void setEscassezMercado(Boolean escassezMercado) {
         this.escassezMercado = escassezMercado;
     }
+
+    public Integer getPrazoChegadaDias() {
+        return prazoChegadaDias;
+    }
+    public void setPrazoChegadaDias(Integer prazoChegadaDias) {
+        this.prazoChegadaDias = prazoChegadaDias;
+    }
 }
